@@ -10,8 +10,8 @@ This example shows how to use the NativeGallery plugin to retrieve an image or v
 Environment
 -----
 - Android (Galaxy S10+ SC-04L) / iPhone SE
-- Unity 2020.3.48f1+
-- [OpenCV for Unity](https://assetstore.unity.com/packages/tools/integration/opencv-for-unity-21088?aid=1011l4ehR) 2.6.0+
+- Unity >= 2021.3.35f1+
+- [OpenCV for Unity](https://assetstore.unity.com/packages/tools/integration/opencv-for-unity-21088?aid=1011l4ehR) 2.6.4+
 - [Native Gallery for Android & iOS](https://assetstore.unity.com/packages/tools/integration/native-gallery-for-android-ios-112630) 1.8.0+
 
 

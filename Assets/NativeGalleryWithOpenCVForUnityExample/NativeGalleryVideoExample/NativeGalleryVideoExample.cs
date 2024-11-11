@@ -3,12 +3,12 @@
 using OpenCVForUnity.CoreModule;
 using OpenCVForUnity.ImgprocModule;
 using OpenCVForUnity.UnityUtils;
+using OpenCVForUnity.UnityUtils.Helper;
 using OpenCVForUnityExample.DnnModel;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
-using UnityEngine.Video;
-using VideoPlayerWithOpenCVForUnity.UnityUtils.Helper;
 
 namespace NativeGalleryWithOpenCVForUnityExample
 {
@@ -16,12 +16,16 @@ namespace NativeGalleryWithOpenCVForUnityExample
     /// Native Gallery Video Example
     /// An example of combining an video file picker using the Native Gallery plugin with image processing by OpenCVForUnity.
     /// </summary>
-    [RequireComponent(typeof(VideoPlayerToMatHelper))]
+    [RequireComponent(typeof(UnityVideoPlayer2MatHelper))]
     public class NativeGalleryVideoExample : MonoBehaviour
     {
-        [Header("Preview")]
-        public RawImage rawImage;
-        public AspectRatioFitter aspectFitter;
+        [Header("Output")]
+        /// <summary>
+        /// The RawImage for previewing the result.
+        /// </summary>
+        public RawImage resultPreview;
+
+        [Space(10)]
 
 
         [Header("ObjectDetecton")]
@@ -68,14 +72,9 @@ namespace NativeGalleryWithOpenCVForUnityExample
         Mat rotatedRgbaMat;
 
         /// <summary>
-        /// The videoplayer to mat helper.
+        /// The unity video player to mat helper.
         /// </summary>
-        VideoPlayerToMatHelper videoPlayerToMatHelper;
-
-        /// <summary>
-        /// The videoplayer.
-        /// </summary>
-        VideoPlayer videoPlayer;
+        UnityVideoPlayer2MatHelper unityVideoPlayerToMatHelper;
 
         /// <summary>
         /// The YOLOX ObjectDetector.
@@ -87,37 +86,42 @@ namespace NativeGalleryWithOpenCVForUnityExample
         /// </summary>
         FpsMonitor fpsMonitor;
 
+        /// <summary>
+        /// The CancellationTokenSource.
+        /// </summary>
+        CancellationTokenSource cts = new CancellationTokenSource();
 
         // Use this for initialization
-        void Start()
+        async void Start()
         {
             fpsMonitor = GetComponent<FpsMonitor>();
 
             // Get the WebCamTextureToMatHelper component attached to the current game object
-            videoPlayerToMatHelper = gameObject.GetComponent<VideoPlayerToMatHelper>();
-            videoPlayerToMatHelper.outputColorFormat = VideoPlayerToMatHelper.ColorFormat.RGBA;
-            videoPlayerToMatHelper.Stop();
+            unityVideoPlayerToMatHelper = gameObject.GetComponent<UnityVideoPlayer2MatHelper>();
+            unityVideoPlayerToMatHelper.outputColorFormat = Source2MatHelperColorFormat.RGBA;
 
-            videoPlayer = GetComponent<VideoPlayer>();
-            videoPlayer.source = VideoSource.Url;
-            videoPlayer.isLooping = true;
-
+            // Asynchronously retrieves the readable file path from the StreamingAssets directory.
+            if (fpsMonitor != null)
+                fpsMonitor.consoleText = "Preparing file access...";
 
             if (!string.IsNullOrEmpty(classes))
             {
-                classes_filepath = Utils.getFilePath("NativeGalleryWithOpenCVForUnityExample/" + classes);
+                classes_filepath = await Utils.getFilePathAsyncTask("NativeGalleryWithOpenCVForUnityExample/" + classes, cancellationToken: cts.Token);
                 if (string.IsNullOrEmpty(classes_filepath)) Debug.Log("The file:" + classes + " did not exist in the folder “Assets/StreamingAssets/NativeGalleryWithOpenCVForUnityExample”.");
             }
             if (!string.IsNullOrEmpty(config))
             {
-                config_filepath = Utils.getFilePath("NativeGalleryWithOpenCVForUnityExample/" + config);
+                config_filepath = await Utils.getFilePathAsyncTask("NativeGalleryWithOpenCVForUnityExample/" + config, cancellationToken: cts.Token);
                 if (string.IsNullOrEmpty(config_filepath)) Debug.Log("The file:" + config + " did not exist in the folder “Assets/StreamingAssets/NativeGalleryWithOpenCVForUnityExample”.");
             }
             if (!string.IsNullOrEmpty(model))
             {
-                model_filepath = Utils.getFilePath("NativeGalleryWithOpenCVForUnityExample/" + model);
+                model_filepath = await Utils.getFilePathAsyncTask("NativeGalleryWithOpenCVForUnityExample/" + model, cancellationToken: cts.Token);
                 if (string.IsNullOrEmpty(model_filepath)) Debug.Log("The file:" + model + " did not exist in the folder “Assets/StreamingAssets/NativeGalleryWithOpenCVForUnityExample”.");
             }
+
+            if (fpsMonitor != null)
+                fpsMonitor.consoleText = "";
 
             Run();
         }
@@ -140,13 +144,13 @@ namespace NativeGalleryWithOpenCVForUnityExample
         }
 
         /// <summary>
-        /// Raises the video player to mat helper initialized event.
+        /// Raises the unity video player to mat helper initialized event.
         /// </summary>
-        public void OnVideoPlayerToMatHelperInitialized()
+        public void OnUnityVideoPlayerToMatHelperInitialized()
         {
             Debug.Log("OnWebCamTextureToMatHelperInitialized");
 
-            Mat rgbaMat = videoPlayerToMatHelper.GetMat();
+            Mat rgbaMat = unityVideoPlayerToMatHelper.GetMat();
 
             int width, height;
             if (videoRotation == 90 || videoRotation == 270)
@@ -162,26 +166,28 @@ namespace NativeGalleryWithOpenCVForUnityExample
             }
 
             texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
-            bgrMat = new Mat(height, width, CvType.CV_8UC3);
 
-            rawImage.texture = texture;
-            aspectFitter.aspectRatio = width / (float)height;
+            resultPreview.texture = texture;
+            resultPreview.GetComponent<AspectRatioFitter>().aspectRatio = (float)texture.width / texture.height;
+
 
             if (fpsMonitor != null)
             {
                 fpsMonitor.Add("width", width.ToString());
                 fpsMonitor.Add("height", height.ToString());
-                fpsMonitor.Add("fps", videoPlayerToMatHelper.GetFPS().ToString());
+                fpsMonitor.Add("fps", unityVideoPlayerToMatHelper.GetFPS().ToString());
                 fpsMonitor.Add("videoRotation", videoRotation.ToString());
             }
+
+            bgrMat = new Mat(height, width, CvType.CV_8UC3);
         }
 
         /// <summary>
-        /// Raises the video player to mat helper disposed event.
+        /// Raises the unity video player to mat helper disposed event.
         /// </summary>
-        public void OnVideoPlayerToMatHelperDisposed()
+        public void OnUnityVideoPlayerToMatHelperDisposed()
         {
-            Debug.Log("OnWebCamTextureToMatHelperDisposed");
+            Debug.Log("OnUnityVideoPlayerToMatHelperDisposed");
 
             if (bgrMat != null)
                 bgrMat.Dispose();
@@ -194,25 +200,34 @@ namespace NativeGalleryWithOpenCVForUnityExample
                 Texture2D.Destroy(texture);
                 texture = null;
             }
+
+            if (cts != null)
+                cts.Dispose();
         }
 
         /// <summary>
-        /// Raises the video player to mat helper error occurred event.
+        /// Raises the unity video player to mat helper error occurred event.
         /// </summary>
         /// <param name="errorCode">Error code.</param>
-        public void OnVideoPlayerToMatHelperErrorOccurred(string errorCode)
+        /// <param name="message">Message.</param>
+        public void OnUnityVideoPlayerToMatHelperErrorOccurred(Source2MatHelperErrorCode errorCode, string message)
         {
-            Debug.Log("OnWebCamTextureToMatHelperErrorOccurred " + errorCode);
+            Debug.Log("OnUnityVideoPlayerToMatHelperErrorOccurred " + errorCode + ":" + message);
+
+            if (fpsMonitor != null)
+            {
+                fpsMonitor.consoleText = "ErrorCode: " + errorCode + ":" + message;
+            }
         }
 
         // Update is called once per frame
         void Update()
         {
 
-            if (videoPlayerToMatHelper.IsPlaying() && videoPlayerToMatHelper.DidUpdateThisFrame())
+            if (unityVideoPlayerToMatHelper.IsPlaying() && unityVideoPlayerToMatHelper.DidUpdateThisFrame())
             {
 
-                Mat rgbaMat = videoPlayerToMatHelper.GetMat();
+                Mat rgbaMat = unityVideoPlayerToMatHelper.GetMat();
 
                 if (videoRotation == 90)
                 {
@@ -265,8 +280,8 @@ namespace NativeGalleryWithOpenCVForUnityExample
             if (objectDetector != null)
                 objectDetector.dispose();
 
-            if (videoPlayerToMatHelper != null)
-                videoPlayerToMatHelper.Dispose();
+            if (unityVideoPlayerToMatHelper != null)
+                unityVideoPlayerToMatHelper.Dispose();
 
             Utils.setDebugMode(false);
         }
@@ -302,8 +317,8 @@ namespace NativeGalleryWithOpenCVForUnityExample
                     if (fpsMonitor != null)
                         fpsMonitor.consoleText += "Video props: " + "wh:" + properties.width + "x" + properties.height + " duration:" + properties.duration + " rotation:" + properties.rotation + "\n";
 
-                    videoPlayer.url = path;
-                    videoPlayerToMatHelper.Initialize();
+                    unityVideoPlayerToMatHelper.requestedVideoFilePath = path;
+                    unityVideoPlayerToMatHelper.Initialize();
                 }
             });
 

@@ -5,6 +5,7 @@ using OpenCVForUnity.ImgcodecsModule;
 using OpenCVForUnity.ImgprocModule;
 using OpenCVForUnity.UnityUtils;
 using OpenCVForUnityExample.DnnModel;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -17,10 +18,13 @@ namespace NativeGalleryWithOpenCVForUnityExample
     /// </summary>
     public class NativeGalleryImageExample : MonoBehaviour
     {
-        [Header("Preview")]
-        public RawImage rawImage;
-        public AspectRatioFitter aspectFitter;
+        [Header("Output")]
+        /// <summary>
+        /// The RawImage for previewing the result.
+        /// </summary>
+        public RawImage resultPreview;
 
+        [Space(10)]
 
         [Header("ObjectDetecton")]
         [TooltipAttribute("Path to a binary file of model contains trained weights. It could be a file with extensions .caffemodel (Caffe), .pb (TensorFlow), .t7 or .net (Torch), .weights (Darknet).")]
@@ -67,27 +71,38 @@ namespace NativeGalleryWithOpenCVForUnityExample
         /// </summary>
         FpsMonitor fpsMonitor;
 
+        /// <summary>
+        /// The CancellationTokenSource.
+        /// </summary>
+        CancellationTokenSource cts = new CancellationTokenSource();
 
         // Use this for initialization
-        void Start()
+        async void Start()
         {
             fpsMonitor = GetComponent<FpsMonitor>();
 
+            // Asynchronously retrieves the readable file path from the StreamingAssets directory.
+            if (fpsMonitor != null)
+                fpsMonitor.consoleText = "Preparing file access...";
+
             if (!string.IsNullOrEmpty(classes))
             {
-                classes_filepath = Utils.getFilePath("NativeGalleryWithOpenCVForUnityExample/" + classes);
+                classes_filepath = await Utils.getFilePathAsyncTask("NativeGalleryWithOpenCVForUnityExample/" + classes, cancellationToken: cts.Token);
                 if (string.IsNullOrEmpty(classes_filepath)) Debug.Log("The file:" + classes + " did not exist in the folder “Assets/StreamingAssets/NativeGalleryWithOpenCVForUnityExample”.");
             }
             if (!string.IsNullOrEmpty(config))
             {
-                config_filepath = Utils.getFilePath("NativeGalleryWithOpenCVForUnityExample/" + config);
+                config_filepath = await Utils.getFilePathAsyncTask("NativeGalleryWithOpenCVForUnityExample/" + config, cancellationToken: cts.Token);
                 if (string.IsNullOrEmpty(config_filepath)) Debug.Log("The file:" + config + " did not exist in the folder “Assets/StreamingAssets/NativeGalleryWithOpenCVForUnityExample”.");
             }
             if (!string.IsNullOrEmpty(model))
             {
-                model_filepath = Utils.getFilePath("NativeGalleryWithOpenCVForUnityExample/" + model);
+                model_filepath = await Utils.getFilePathAsyncTask("NativeGalleryWithOpenCVForUnityExample/" + model, cancellationToken: cts.Token);
                 if (string.IsNullOrEmpty(model_filepath)) Debug.Log("The file:" + model + " did not exist in the folder “Assets/StreamingAssets/NativeGalleryWithOpenCVForUnityExample”.");
             }
+
+            if (fpsMonitor != null)
+                fpsMonitor.consoleText = "";
 
             Run();
         }
@@ -146,6 +161,9 @@ namespace NativeGalleryWithOpenCVForUnityExample
             }
 
             Utils.setDebugMode(false);
+
+            if (cts != null)
+                cts.Dispose();
         }
 
         /// <summary>
@@ -206,8 +224,8 @@ namespace NativeGalleryWithOpenCVForUnityExample
                         Utils.matToTexture2D(rgbaMat, texture);
                     }
 
-                    rawImage.texture = texture;
-                    aspectFitter.aspectRatio = texture.width / (float)texture.height;
+                    resultPreview.texture = texture;
+                    resultPreview.GetComponent<AspectRatioFitter>().aspectRatio = (float)texture.width / texture.height;
 
                     // If a procedural texture is not destroyed manually, 
                     // it will only be freed after a scene change
@@ -266,8 +284,8 @@ namespace NativeGalleryWithOpenCVForUnityExample
                             Utils.matToTexture2D(rgbaMat, texture);
                         }
 
-                        rawImage.texture = texture;
-                        aspectFitter.aspectRatio = texture.width / (float)texture.height;
+                        resultPreview.texture = texture;
+                        resultPreview.GetComponent<AspectRatioFitter>().aspectRatio = (float)texture.width / texture.height;
                     }
                 }
             });
