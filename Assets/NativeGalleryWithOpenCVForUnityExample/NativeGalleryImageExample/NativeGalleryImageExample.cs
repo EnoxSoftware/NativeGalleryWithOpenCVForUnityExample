@@ -3,7 +3,7 @@
 using OpenCVForUnity.CoreModule;
 using OpenCVForUnity.ImgcodecsModule;
 using OpenCVForUnity.ImgprocModule;
-using OpenCVForUnity.UnityUtils;
+using OpenCVForUnity.UnityIntegration;
 using OpenCVForUnityExample.DnnModel;
 using System.Threading;
 using UnityEngine;
@@ -87,17 +87,17 @@ namespace NativeGalleryWithOpenCVForUnityExample
 
             if (!string.IsNullOrEmpty(classes))
             {
-                classes_filepath = await Utils.getFilePathAsyncTask("NativeGalleryWithOpenCVForUnityExample/" + classes, cancellationToken: cts.Token);
+                classes_filepath = await OpenCVEnv.GetFilePathTaskAsync("NativeGalleryWithOpenCVForUnityExample/" + classes, cancellationToken: cts.Token);
                 if (string.IsNullOrEmpty(classes_filepath)) Debug.Log("The file:" + classes + " did not exist in the folder “Assets/StreamingAssets/NativeGalleryWithOpenCVForUnityExample”.");
             }
             if (!string.IsNullOrEmpty(config))
             {
-                config_filepath = await Utils.getFilePathAsyncTask("NativeGalleryWithOpenCVForUnityExample/" + config, cancellationToken: cts.Token);
+                config_filepath = await OpenCVEnv.GetFilePathTaskAsync("NativeGalleryWithOpenCVForUnityExample/" + config, cancellationToken: cts.Token);
                 if (string.IsNullOrEmpty(config_filepath)) Debug.Log("The file:" + config + " did not exist in the folder “Assets/StreamingAssets/NativeGalleryWithOpenCVForUnityExample”.");
             }
             if (!string.IsNullOrEmpty(model))
             {
-                model_filepath = await Utils.getFilePathAsyncTask("NativeGalleryWithOpenCVForUnityExample/" + model, cancellationToken: cts.Token);
+                model_filepath = await OpenCVEnv.GetFilePathTaskAsync("NativeGalleryWithOpenCVForUnityExample/" + model, cancellationToken: cts.Token);
                 if (string.IsNullOrEmpty(model_filepath)) Debug.Log("The file:" + model + " did not exist in the folder “Assets/StreamingAssets/NativeGalleryWithOpenCVForUnityExample”.");
             }
 
@@ -111,7 +111,7 @@ namespace NativeGalleryWithOpenCVForUnityExample
         void Run()
         {
             //if true, The error log of the Native side OpenCV will be displayed on the Unity Editor Console.
-            Utils.setDebugMode(true);
+            OpenCVDebug.SetDebugMode(true);
 
 
             if (string.IsNullOrEmpty(model_filepath))
@@ -160,7 +160,7 @@ namespace NativeGalleryWithOpenCVForUnityExample
                 texture = null;
             }
 
-            Utils.setDebugMode(false);
+            OpenCVDebug.SetDebugMode(false);
 
             if (cts != null)
                 cts.Dispose();
@@ -215,13 +215,13 @@ namespace NativeGalleryWithOpenCVForUnityExample
                     using (Mat bgrMat = new Mat(texture.height, texture.width, CvType.CV_8UC3))
                     using (Mat rgbaMat = new Mat(texture.height, texture.width, CvType.CV_8UC4))
                     {
-                        Utils.texture2DToMat(tex, rgbaMat);
+                        OpenCVMatUtils.Texture2DToMat(tex, rgbaMat);
                         Imgproc.cvtColor(rgbaMat, bgrMat, Imgproc.COLOR_RGBA2BGR);
 
                         DetectObjectAndVisualize(bgrMat);
 
                         Imgproc.cvtColor(bgrMat, rgbaMat, Imgproc.COLOR_BGR2RGBA);
-                        Utils.matToTexture2D(rgbaMat, texture);
+                        OpenCVMatUtils.MatToTexture2D(rgbaMat, texture);
                     }
 
                     resultPreview.texture = texture;
@@ -281,7 +281,7 @@ namespace NativeGalleryWithOpenCVForUnityExample
                             DetectObjectAndVisualize(bgrMat);
 
                             Imgproc.cvtColor(bgrMat, rgbaMat, Imgproc.COLOR_BGR2RGBA);
-                            Utils.matToTexture2D(rgbaMat, texture);
+                            OpenCVMatUtils.MatToTexture2D(rgbaMat, texture);
                         }
 
                         resultPreview.texture = texture;

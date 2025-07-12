@@ -3,7 +3,7 @@
 using OpenCVForUnity.CoreModule;
 using OpenCVForUnity.DnnModule;
 using OpenCVForUnity.ImgprocModule;
-using OpenCVForUnity.UnityUtils;
+using OpenCVForUnity.UnityIntegration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -568,7 +568,7 @@ namespace OpenCVForUnityExample.DnnModel
                 return new DetectionData[0];
 
             var dst = new DetectionData[results.rows()];
-            MatUtils.copyFromMat(results, dst);
+            OpenCVMatUtils.CopyFromMat(results, dst);
 
             return dst;
         }

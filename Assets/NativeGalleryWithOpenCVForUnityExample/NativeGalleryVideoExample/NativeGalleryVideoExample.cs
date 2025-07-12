@@ -2,8 +2,8 @@
 
 using OpenCVForUnity.CoreModule;
 using OpenCVForUnity.ImgprocModule;
-using OpenCVForUnity.UnityUtils;
-using OpenCVForUnity.UnityUtils.Helper;
+using OpenCVForUnity.UnityIntegration;
+using OpenCVForUnity.UnityIntegration.Helper.Source2Mat;
 using OpenCVForUnityExample.DnnModel;
 using System.Threading;
 using UnityEngine;
@@ -98,7 +98,7 @@ namespace NativeGalleryWithOpenCVForUnityExample
 
             // Get the WebCamTextureToMatHelper component attached to the current game object
             unityVideoPlayerToMatHelper = gameObject.GetComponent<UnityVideoPlayer2MatHelper>();
-            unityVideoPlayerToMatHelper.outputColorFormat = Source2MatHelperColorFormat.RGBA;
+            unityVideoPlayerToMatHelper.OutputColorFormat = Source2MatHelperColorFormat.RGBA;
 
             // Asynchronously retrieves the readable file path from the StreamingAssets directory.
             if (fpsMonitor != null)
@@ -106,17 +106,17 @@ namespace NativeGalleryWithOpenCVForUnityExample
 
             if (!string.IsNullOrEmpty(classes))
             {
-                classes_filepath = await Utils.getFilePathAsyncTask("NativeGalleryWithOpenCVForUnityExample/" + classes, cancellationToken: cts.Token);
+                classes_filepath = await OpenCVEnv.GetFilePathTaskAsync("NativeGalleryWithOpenCVForUnityExample/" + classes, cancellationToken: cts.Token);
                 if (string.IsNullOrEmpty(classes_filepath)) Debug.Log("The file:" + classes + " did not exist in the folder “Assets/StreamingAssets/NativeGalleryWithOpenCVForUnityExample”.");
             }
             if (!string.IsNullOrEmpty(config))
             {
-                config_filepath = await Utils.getFilePathAsyncTask("NativeGalleryWithOpenCVForUnityExample/" + config, cancellationToken: cts.Token);
+                config_filepath = await OpenCVEnv.GetFilePathTaskAsync("NativeGalleryWithOpenCVForUnityExample/" + config, cancellationToken: cts.Token);
                 if (string.IsNullOrEmpty(config_filepath)) Debug.Log("The file:" + config + " did not exist in the folder “Assets/StreamingAssets/NativeGalleryWithOpenCVForUnityExample”.");
             }
             if (!string.IsNullOrEmpty(model))
             {
-                model_filepath = await Utils.getFilePathAsyncTask("NativeGalleryWithOpenCVForUnityExample/" + model, cancellationToken: cts.Token);
+                model_filepath = await OpenCVEnv.GetFilePathTaskAsync("NativeGalleryWithOpenCVForUnityExample/" + model, cancellationToken: cts.Token);
                 if (string.IsNullOrEmpty(model_filepath)) Debug.Log("The file:" + model + " did not exist in the folder “Assets/StreamingAssets/NativeGalleryWithOpenCVForUnityExample”.");
             }
 
@@ -130,7 +130,7 @@ namespace NativeGalleryWithOpenCVForUnityExample
         void Run()
         {
             //if true, The error log of the Native side OpenCV will be displayed on the Unity Editor Console.
-            Utils.setDebugMode(true);
+            OpenCVDebug.SetDebugMode(true);
 
 
             if (string.IsNullOrEmpty(model_filepath))
@@ -267,7 +267,7 @@ namespace NativeGalleryWithOpenCVForUnityExample
                     objectDetector.visualize(rgbaMat, results, false, true);
                 }
 
-                Utils.matToTexture2D(rgbaMat, texture);
+                OpenCVMatUtils.MatToTexture2D(rgbaMat, texture);
             }
 
         }
@@ -283,7 +283,7 @@ namespace NativeGalleryWithOpenCVForUnityExample
             if (unityVideoPlayerToMatHelper != null)
                 unityVideoPlayerToMatHelper.Dispose();
 
-            Utils.setDebugMode(false);
+            OpenCVDebug.SetDebugMode(false);
         }
 
         /// <summary>
@@ -317,7 +317,7 @@ namespace NativeGalleryWithOpenCVForUnityExample
                     if (fpsMonitor != null)
                         fpsMonitor.consoleText += "Video props: " + "wh:" + properties.width + "x" + properties.height + " duration:" + properties.duration + " rotation:" + properties.rotation + "\n";
 
-                    unityVideoPlayerToMatHelper.requestedVideoFilePath = path;
+                    unityVideoPlayerToMatHelper.RequestedVideoFilePath = path;
                     unityVideoPlayerToMatHelper.Initialize();
                 }
             });

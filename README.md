@@ -11,7 +11,7 @@ Environment
 -----
 - Android (Galaxy S10+ SC-04L) / iPhone SE
 - Unity >= 2021.3.35f1+
-- [OpenCV for Unity](https://assetstore.unity.com/packages/tools/integration/opencv-for-unity-21088?aid=1011l4ehR) 2.6.4+
+- [OpenCV for Unity](https://assetstore.unity.com/packages/tools/integration/opencv-for-unity-21088?aid=1011l4ehR) 3.0.0+
 - [Native Gallery for Android & iOS](https://assetstore.unity.com/packages/tools/integration/native-gallery-for-android-ios-112630) 1.8.0+
 
 
